@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Fuegos Artificiales Corazones</title>
+<style>
+    body {
+        margin: 0;
+        background: black;
+        overflow: hidden;
+    }
+    canvas {
+        display: block;
+    }
+</style>
+</head>
+<body>
+<canvas id="canvas"></canvas>
+<script>
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+// ADAPTA EL CANVAS AL CAMBIAR EL TAMAÑO DE LA VENTANA
+window.addEventListener("resize", () => {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+});
+
+const frases = [
+    "Te Amo", "Siempre Juntos", "Amor Eterno", "Eres Mi Todo", 
+    "Contigo Siempre", "Mi Vida, Mi Amor", "Mi Corazón Es Tuyo", "Te Adoro"
+];
+
+// Fondo de estrellas
+let estrellas = [];
+for (let i = 0; i < 200; i++) {
+    estrellas.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        size: Math.random() * 1.5,
+        speed: Math.random() * 0.3
+    });
+}
+function dibujarEstrellas() {
+    ctx.fillStyle = "white";
+    estrellas.forEach(estrella => {
+        ctx.beginPath();
+        ctx.arc(estrella.x, estrella.y, estrella.size, 0, Math.PI * 2);
+        ctx.fill();
+        estrella.y += estrella.speed;
+        if (estrella.y > canvas.height) {
+            estrella.y = 0;
+            estrella.x = Math.random() * canvas.width;
+        }
+    });
+}
+
+// Generador de corazones
+function generarCorazon(cx, cy, tamaño) {
+    let puntos = [];
+    for (let t = 0; t < Math.PI * 2; t += 0.05) {
+        let x = tamaño * 16 * Math.pow(Math.sin(t), 3);
+        let y = -tamaño * (13 * Math.cos(t) - 5 * Math.cos(2*t) - 2 * Math.cos(3*t) - Math.cos(4*t));
+        puntos.push({x: cx + x, y: cy + y});
+    }
+    return puntos;
+}
+
+let fuegos = [];
+let explosiones = [];
+
+// Lanzar cohetes
+function lanzarCohete() {
+    let cantidad = Math.floor(Math.random() * 3) + 1; // entre 1 y 3 cohetes
+    for (let i = 0; i < cantidad; i++) {
+        let x = Math.random() * (canvas.width * 0.8) + canvas.width * 0.1;
+        let yObjetivo = Math.random() * (canvas.height * 0.4) + canvas.height * 0.2;
+        let frase = frases[Math.floor(Math.random() * frases.length)];
+        fuegos.push({
+            x: x,
+            y: canvas.height,
+            yObjetivo: yObjetivo,
+            velocidad: -6 - Math.random() * 2,
+            trail: [],
+            frase: frase,
+            chispa: []
+        });
+    }
+}
+
+// Explosión en forma de corazón
+function crearExplosion(x, y, frase) {
+    let contorno = generarCorazon(x, y, 10);
+    explosiones.push({
+        particulas: contorno.map(p => ({
+            x: x, y: y, 
+            tx: p.x, ty: p.y,
+            alpha: 1,
+            trail: [{x: x, y: y}]
+        })),
+        texto: frase,
+        x: x,
+        y: y,
+        vida: 90,
+        mostrarTexto: false,
+        textoAlpha: 0
+    });
+}
+
+// Dibuja cohetes con chispeo
+function dibujarCohetes() {
+    for (let i = fuegos.length - 1; i >= 0; i--) {
+        let f = fuegos[i];
+        f.y += f.velocidad;
+
+        // Rastro
+        f.trail.push({x: f.x, y: f.y});
+        if (f.trail.length > 30) f.trail.shift(); // tamaño de rastro cohete
+    
+ctx.save();
+for (let j = 1; j < f.trail.length; j++) {
+    let alpha = j / f.trail.length; // Transparencia según antigüedad
+    ctx.strokeStyle = "#ff0000";
+    ctx.globalAlpha = alpha * 0.7; // Ajusta el 0.7 para más/menos intensidad
+    ctx.beginPath();
+    ctx.moveTo(f.trail[j-1].x, f.trail[j-1].y);
+    ctx.lineTo(f.trail[j].x, f.trail[j].y);
+    ctx.stroke();
+}
+ctx.restore();
+ctx.globalAlpha = 1;
+
+        // Chispas
+        if (Math.random() < 0.4) {
+            f.chispa.push({
+                x: f.x + (Math.random() - 0.5) * 8,
+                y: f.y + (Math.random() - 0.5) * 8,
+                alpha: 1,
+                size: Math.random() * 2 + 1
+            });
+        }
+        for (let c = f.chispa.length - 1; c >= 0; c--) {
+            let ch = f.chispa[c];
+            ch.alpha -= 0.05;
+            ctx.globalAlpha = ch.alpha;
+            ctx.fillStyle = "yellow";
+            ctx.beginPath();
+            ctx.arc(ch.x, ch.y, ch.size, 0, Math.PI * 2);
+            ctx.fill();
+            if (ch.alpha <= 0) f.chispa.splice(c, 1);
+        }
+        ctx.globalAlpha = 1;
+
+        // Partícula central
+        ctx.fillStyle = "#ff0000";
+        ctx.beginPath();
+        ctx.arc(f.x, f.y, 3, 0, Math.PI * 2);
+        ctx.fill();
+
+        if (f.y <= f.yObjetivo) {
+            crearExplosion(f.x, f.y, f.frase);
+            fuegos.splice(i, 1);
+        }
+    }
+}
+
+// Explosiones
+function dibujarExplosiones() {
+    for (let i = explosiones.length - 1; i >= 0; i--) {
+        const explosion = explosiones[i];
+        explosion.vida--;
+        const fade = explosion.vida / 90;
+
+        if (explosion.vida < 70) {
+            explosion.mostrarTexto = true;
+            if (explosion.textoAlpha < 1) {
+                explosion.textoAlpha += 0.05;
+            }
+        }
+
+        explosion.particulas.forEach(p => {
+            p.x += (p.tx - p.x) * 0.05;
+            p.y += (p.ty - p.y) * 0.05;
+            p.trail.push({x: p.x, y: p.y});
+            if (p.trail.length > 15) p.trail.shift();
+
+            ctx.save();
+            ctx.globalAlpha = 0.6 * fade;
+            ctx.strokeStyle = "#ff0000";
+            ctx.beginPath();
+            for (let j = 1; j < p.trail.length; j++) {
+                ctx.moveTo(p.trail[j-1].x, p.trail[j-1].y);
+                ctx.lineTo(p.trail[j].x, p.trail[j].y);
+            }
+            ctx.stroke();
+            ctx.restore();
+
+            ctx.fillStyle = "#ff0000";
+            ctx.globalAlpha = fade;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, 2, 0, Math.PI * 2);
+            ctx.fill();
+        });
+
+        if (explosion.mostrarTexto) {
+            ctx.globalAlpha = explosion.textoAlpha * fade;
+            ctx.font = "bold 26px Arial";
+            ctx.fillStyle = "pink";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText(explosion.texto, explosion.x, explosion.y - 5);
+        }
+
+        ctx.globalAlpha = 1;
+        if (explosion.vida <= 0) explosiones.splice(i, 1);
+    }
+}
+
+function animar() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    dibujarEstrellas();
+    dibujarCohetes();
+    dibujarExplosiones();
+    requestAnimationFrame(animar);
+}
+
+setInterval(lanzarCohete, 1600);
+animar();
+</script>
+</body>
+</html>
