@@ -156,7 +156,7 @@ ctx.globalAlpha = 1;
         // Partícula central
         ctx.fillStyle = "#ff0000";
         ctx.beginPath();
-        ctx.arc(f.x, f.y, 3, 0, Math.PI * 2);
+        ctx.arc(f.x, f.y, 4, 0, Math.PI * 2);
         ctx.fill();
 
         if (f.y <= f.yObjetivo) {
@@ -189,7 +189,7 @@ function dibujarExplosiones() {
             ctx.save();
             ctx.globalAlpha = 0.6 * fade;
             ctx.strokeStyle = "#ff0000";
-            ctx.beginPath();
+            ctx.lineWidth = 2;  // <--- Aquí aumentas el grosor
             for (let j = 1; j < p.trail.length; j++) {
                 ctx.moveTo(p.trail[j-1].x, p.trail[j-1].y);
                 ctx.lineTo(p.trail[j].x, p.trail[j].y);
@@ -200,7 +200,7 @@ function dibujarExplosiones() {
             ctx.fillStyle = "#ff0000";
             ctx.globalAlpha = fade;
             ctx.beginPath();
-            ctx.arc(p.x, p.y, 2, 0, Math.PI * 2);
+            ctx.arc(p.x, p.y, 3, 0, Math.PI * 2); // tamaño particula
             ctx.fill();
         });
 
