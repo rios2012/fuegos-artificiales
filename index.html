@@ -185,11 +185,39 @@ function dibujarExplosiones() {
             p.y += (p.ty - p.y) * 0.05;
             p.trail.push({x: p.x, y: p.y});
             if (p.trail.length > 15) p.trail.shift();
+// Inicializa arreglo de chispas para la partícula si no existe
+    if (!p.chispa) p.chispa = [];
+
+    // Genera chispas aleatorias en la posición actual de la partícula
+    if (Math.random() < 0.3) { // 30% de probabilidad por frame
+        p.chispa.push({
+            x: p.x + (Math.random() - 0.5) * 6,
+            y: p.y + (Math.random() - 0.5) * 6,
+            alpha: 1,
+            size: Math.random() * 2 + 1
+        });
+    }
+
+    // Actualiza y dibuja las chispas de esta partícula
+    for (let c = p.chispa.length - 1; c >= 0; c--) {
+        let ch = p.chispa[c];
+        ch.alpha -= 0.04;
+        if (ch.alpha <= 0) {
+            p.chispa.splice(c, 1);
+            continue;
+        }
+        ctx.globalAlpha = ch.alpha * (explosion.vida / 60);
+        ctx.fillStyle = "#ff0000"; // color chispas
+        ctx.beginPath();
+        ctx.arc(ch.x, ch.y, ch.size, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
 
             ctx.save();
             ctx.globalAlpha = 0.6 * fade;
             ctx.strokeStyle = "#ff0000";
-            ctx.lineWidth = 2;  // <--- Aquí aumentas el grosor
+            ctx.lineWidth = 1;  // <--- Aquí aumentas el grosor
             for (let j = 1; j < p.trail.length; j++) {
                 ctx.moveTo(p.trail[j-1].x, p.trail[j-1].y);
                 ctx.lineTo(p.trail[j].x, p.trail[j].y);
