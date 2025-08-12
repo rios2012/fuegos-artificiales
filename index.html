@@ -74,6 +74,18 @@ let explosiones = [];
 // Cambiar esta variable para limitar máximo cohetes simultáneos
 const MAX_COHETES = 5;
 
+// Función para elegir color aleatorio para chispas multicolor
+function colorAleatorio() {
+    const colores = [ "#FF0000", // rojo intenso (amor apasionado)
+  "#FF69B4", // rosa fuerte (romántico)
+  "#FFC0CB", // rosa claro (dulzura)
+  "#DB7093", // rosa medio (romántico y elegante)
+  "#800080", // púrpura (misterio y pasión)
+  "#FFD700", // dorado (lujo y brillo)
+  "#FFFFFF"  // blanco (pureza y brillo)
+  ];
+    return colores[Math.floor(Math.random() * colores.length)];
+}
 // Lanzar cohetes
 function lanzarCohete() {
     // Solo lanzar si hay menos de MAX_COHETES cohetes activos
@@ -195,14 +207,15 @@ function dibujarExplosiones() {
 // Inicializa arreglo de chispas para la partícula si no existe
     if (!p.chispa) p.chispa = [];
 
-    // Genera chispas aleatorias en la posición actual de la partícula
-    if (Math.random() < 0.3) { // 30% de probabilidad por frame
-        p.chispa.push({
-            x: p.x + (Math.random() - 0.5) * 6,
-            y: p.y + (Math.random() - 0.5) * 6,
-            alpha: 1,
-            size: Math.random() * 2 + 1
-        });
+    // Generar chispas multicolor en la partícula
+            if (Math.random() < 0.3) {
+                p.chispa.push({
+                    x: p.x + (Math.random() - 0.5) * 6,
+                    y: p.y + (Math.random() - 0.5) * 6,
+                    alpha: 1,
+                    size: Math.random() * 2 + 1,
+                    color: colorAleatorio()
+                });
     }
 
     // Actualiza y dibuja las chispas de esta partícula
@@ -214,7 +227,7 @@ function dibujarExplosiones() {
             continue;
         }
         ctx.globalAlpha = ch.alpha * (explosion.vida / 60);
-        ctx.fillStyle = "#ff0000"; // color chispas
+       ctx.fillStyle = ch.color;   // <-- Usamos el color específico de cada chispa
         ctx.beginPath();
         ctx.arc(ch.x, ch.y, ch.size, 0, Math.PI * 2);
         ctx.fill();
