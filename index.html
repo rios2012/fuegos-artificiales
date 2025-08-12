@@ -71,10 +71,17 @@ function generarCorazon(cx, cy, tamaño) {
 let fuegos = [];
 let explosiones = [];
 
+// Cambiar esta variable para limitar máximo cohetes simultáneos
+const MAX_COHETES = 5;
+
 // Lanzar cohetes
 function lanzarCohete() {
-    let cantidad = Math.floor(Math.random() * 3) + 1; // entre 1 y 3 cohetes
+    // Solo lanzar si hay menos de MAX_COHETES cohetes activos
+    if (fuegos.length >= MAX_COHETES) return;
+
+    let cantidad = Math.floor(Math.random() * 3) + 1; // entre 1 y 2 cohetes para menor carga
     for (let i = 0; i < cantidad; i++) {
+        if (fuegos.length >= MAX_COHETES) break; // no exceder maximos
         let x = Math.random() * (canvas.width * 0.8) + canvas.width * 0.1;
         let yObjetivo = Math.random() * (canvas.height * 0.4) + canvas.height * 0.2;
         let frase = frases[Math.floor(Math.random() * frases.length)];
@@ -82,7 +89,7 @@ function lanzarCohete() {
             x: x,
             y: canvas.height,
             yObjetivo: yObjetivo,
-            velocidad: -6 - Math.random() * 2,
+            velocidad: -6 - Math.random() * 2, // velocidad más lenta para menos partículas
             trail: [],
             frase: frase,
             chispa: []
