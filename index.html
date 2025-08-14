@@ -22,14 +22,18 @@ const ctx = canvas.getContext("2d");
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
-// ADAPTA EL CANVAS AL CAMBIAR EL TAMAÑO DE LA VENTANA
+// Cargar imagen para algunas explosiones
+const imagenAria = new Image();
+imagenAria.src = "aria.jpeg"; // Debe estar en la misma carpeta que index.html
+
+// Adaptar canvas al cambiar el tamaño de ventana
 window.addEventListener("resize", () => {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
 });
 
 const frases = [
-     "Te Amo", "Siempre Juntos", "Amor Eterno", "Eres Mi Todo",
+    "Te Amo", "Siempre Juntos", "Amor Eterno", "Eres Mi Todo",
     "Eres mi sol", "Mi dulce amor", "Amor sin fin", "Eres mi vida",
     "Mi eterno amor", "Latidos tuyos", "Amor verdadero", "Para siempre tú",
     "Amor profundo", "Corazón feliz", "Amor sincero", "Mi media naranja",
@@ -73,30 +77,21 @@ function generarCorazon(cx, cy, tamaño) {
 
 let fuegos = [];
 let explosiones = [];
-
-// Cambiar esta variable para limitar máximo cohetes simultáneos
 const MAX_COHETES = 5;
 
-// Función para elegir color aleatorio para chispas multicolor
+// Colores de chispas
 function colorAleatorio() {
-    const colores = [ "#FF0000", // rojo intenso (amor apasionado)
-  "#FF69B4", // rosa fuerte (romántico)
-  "#FFC0CB", // rosa claro (dulzura)
-  "#DB7093", // rosa medio (romántico y elegante)
-  "#800080", // púrpura (misterio y pasión)
-  "#FFD700", // dorado (lujo y brillo)
-  "#FFFFFF"  // blanco (pureza y brillo)
-  ];
+    const colores = [ "#FF0000", "#FF69B4", "#FFC0CB", "#DB7093", "#800080", "#FFD700", "#FFFFFF" ];
     return colores[Math.floor(Math.random() * colores.length)];
 }
+
 // Lanzar cohetes
 function lanzarCohete() {
-    // Solo lanzar si hay menos de MAX_COHETES cohetes activos
     if (fuegos.length >= MAX_COHETES) return;
 
-    let cantidad = Math.floor(Math.random() * 3) + 1; // entre 1 y 2 cohetes para menor carga
+    let cantidad = Math.floor(Math.random() * 3) + 1;
     for (let i = 0; i < cantidad; i++) {
-        if (fuegos.length >= MAX_COHETES) break; // no exceder maximos
+        if (fuegos.length >= MAX_COHETES) break;
         let x = Math.random() * (canvas.width * 0.8) + canvas.width * 0.1;
         let yObjetivo = Math.random() * (canvas.height * 0.4) + canvas.height * 0.2;
         let frase = frases[Math.floor(Math.random() * frases.length)];
@@ -104,7 +99,7 @@ function lanzarCohete() {
             x: x,
             y: canvas.height,
             yObjetivo: yObjetivo,
-            velocidad: -6 - Math.random() * 2, // velocidad más lenta para menos partículas
+            velocidad: -6 - Math.random() * 2,
             trail: [],
             frase: frase,
             chispa: []
@@ -112,8 +107,9 @@ function lanzarCohete() {
     }
 }
 
-// Explosión en forma de corazón
+// Crear explosión (imagen o texto, no ambos)
 function crearExplosion(x, y, frase) {
+    let mostrarImagen = Math.random() < 0.5; // 50% probabilidad de imagen
     let contorno = generarCorazon(x, y, 10);
     explosiones.push({
         particulas: contorno.map(p => ({
@@ -122,39 +118,38 @@ function crearExplosion(x, y, frase) {
             alpha: 1,
             trail: [{x: x, y: y}]
         })),
-        texto: frase,
+        texto: mostrarImagen ? "" : frase,
         x: x,
         y: y,
         vida: 90,
         mostrarTexto: false,
-        textoAlpha: 0
+        textoAlpha: 0,
+        mostrarImagen: mostrarImagen
     });
 }
 
-// Dibuja cohetes con chispeo
+// Dibujar cohetes
 function dibujarCohetes() {
     for (let i = fuegos.length - 1; i >= 0; i--) {
         let f = fuegos[i];
         f.y += f.velocidad;
 
-        // Rastro
         f.trail.push({x: f.x, y: f.y});
-        if (f.trail.length > 30) f.trail.shift(); // tamaño de rastro cohete
+        if (f.trail.length > 30) f.trail.shift();
     
-ctx.save();
-for (let j = 1; j < f.trail.length; j++) {
-    let alpha = j / f.trail.length; // Transparencia según antigüedad
-    ctx.strokeStyle = "#ff0000";
-    ctx.globalAlpha = alpha * 0.7; // Ajusta el 0.7 para más/menos intensidad
-    ctx.beginPath();
-    ctx.moveTo(f.trail[j-1].x, f.trail[j-1].y);
-    ctx.lineTo(f.trail[j].x, f.trail[j].y);
-    ctx.stroke();
-}
-ctx.restore();
-ctx.globalAlpha = 1;
+        ctx.save();
+        for (let j = 1; j < f.trail.length; j++) {
+            let alpha = j / f.trail.length;
+            ctx.strokeStyle = "#ff0000";
+            ctx.globalAlpha = alpha * 0.7;
+            ctx.beginPath();
+            ctx.moveTo(f.trail[j-1].x, f.trail[j-1].y);
+            ctx.lineTo(f.trail[j].x, f.trail[j].y);
+            ctx.stroke();
+        }
+        ctx.restore();
+        ctx.globalAlpha = 1;
 
-        // Chispas
         if (Math.random() < 0.4) {
             f.chispa.push({
                 x: f.x + (Math.random() - 0.5) * 8,
@@ -175,7 +170,6 @@ ctx.globalAlpha = 1;
         }
         ctx.globalAlpha = 1;
 
-        // Partícula central
         ctx.fillStyle = "#ff0000";
         ctx.beginPath();
         ctx.arc(f.x, f.y, 4, 0, Math.PI * 2);
@@ -188,7 +182,7 @@ ctx.globalAlpha = 1;
     }
 }
 
-// Explosiones
+// Dibujar explosiones
 function dibujarExplosiones() {
     for (let i = explosiones.length - 1; i >= 0; i--) {
         const explosion = explosiones[i];
@@ -207,10 +201,8 @@ function dibujarExplosiones() {
             p.y += (p.ty - p.y) * 0.05;
             p.trail.push({x: p.x, y: p.y});
             if (p.trail.length > 15) p.trail.shift();
-// Inicializa arreglo de chispas para la partícula si no existe
-    if (!p.chispa) p.chispa = [];
 
-    // Generar chispas multicolor en la partícula
+            if (!p.chispa) p.chispa = [];
             if (Math.random() < 0.3) {
                 p.chispa.push({
                     x: p.x + (Math.random() - 0.5) * 6,
@@ -219,28 +211,26 @@ function dibujarExplosiones() {
                     size: Math.random() * 2 + 1,
                     color: colorAleatorio()
                 });
-    }
+            }
 
-    // Actualiza y dibuja las chispas de esta partícula
-    for (let c = p.chispa.length - 1; c >= 0; c--) {
-        let ch = p.chispa[c];
-        ch.alpha -= 0.04;
-        if (ch.alpha <= 0) {
-            p.chispa.splice(c, 1);
-            continue;
-        }
-        ctx.globalAlpha = ch.alpha * (explosion.vida / 60);
-       ctx.fillStyle = ch.color;   // <-- Usamos el color específico de cada chispa
-        ctx.beginPath();
-        ctx.arc(ch.x, ch.y, ch.size, 0, Math.PI * 2);
-        ctx.fill();
-    }
-
+            for (let c = p.chispa.length - 1; c >= 0; c--) {
+                let ch = p.chispa[c];
+                ch.alpha -= 0.04;
+                if (ch.alpha <= 0) {
+                    p.chispa.splice(c, 1);
+                    continue;
+                }
+                ctx.globalAlpha = ch.alpha * (explosion.vida / 60);
+                ctx.fillStyle = ch.color;
+                ctx.beginPath();
+                ctx.arc(ch.x, ch.y, ch.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
 
             ctx.save();
             ctx.globalAlpha = 0.6 * fade;
             ctx.strokeStyle = "#ff0000";
-            ctx.lineWidth = 1;  // <--- Aquí aumentas el grosor
+            ctx.lineWidth = 1;
             for (let j = 1; j < p.trail.length; j++) {
                 ctx.moveTo(p.trail[j-1].x, p.trail[j-1].y);
                 ctx.lineTo(p.trail[j].x, p.trail[j].y);
@@ -251,17 +241,25 @@ function dibujarExplosiones() {
             ctx.fillStyle = "#ff0000";
             ctx.globalAlpha = fade;
             ctx.beginPath();
-            ctx.arc(p.x, p.y, 3, 0, Math.PI * 2); // tamaño particula
+            ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
             ctx.fill();
         });
 
-        if (explosion.mostrarTexto) {
+        // Mostrar solo texto si no es de imagen
+        if (explosion.mostrarTexto && !explosion.mostrarImagen) {
             ctx.globalAlpha = explosion.textoAlpha * fade;
             ctx.font = "bold 26px Arial";
             ctx.fillStyle = "pink";
             ctx.textAlign = "center";
             ctx.textBaseline = "middle";
             ctx.fillText(explosion.texto, explosion.x, explosion.y - 5);
+        }
+
+        // Mostrar imagen si está activada
+        if (explosion.mostrarImagen) {
+            let tamañoImg = 120;
+            ctx.globalAlpha = explosion.textoAlpha * fade;
+            ctx.drawImage(imagenAria, explosion.x - tamañoImg/2, explosion.y - tamañoImg/2, tamañoImg, tamañoImg);
         }
 
         ctx.globalAlpha = 1;
@@ -282,4 +280,6 @@ animar();
 </script>
 </body>
 </html>
+
+
 
