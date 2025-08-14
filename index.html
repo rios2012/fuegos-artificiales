@@ -24,7 +24,20 @@ canvas.height = window.innerHeight;
 
 // Cargar imagen para algunas explosiones
 const imagenAria = new Image();
-imagenAria.src = "aria.jpeg"; // Debe estar en la misma carpeta que index.html
+imagenAria.src = "aria.jpeg";
+
+// --- AUDIO DE EXPLOSIÓN ---
+let audioHabilitado = false;
+const sonidoExplosion = new Audio("artificial.mp3");
+sonidoExplosion.volume = 0.5;
+
+function habilitarAudio() {
+    audioHabilitado = true;
+    document.removeEventListener("click", habilitarAudio);
+    document.removeEventListener("touchstart", habilitarAudio);
+}
+document.addEventListener("click", habilitarAudio);
+document.addEventListener("touchstart", habilitarAudio);
 
 // Adaptar canvas al cambiar el tamaño de ventana
 window.addEventListener("resize", () => {
@@ -79,7 +92,6 @@ let fuegos = [];
 let explosiones = [];
 const MAX_COHETES = 5;
 
-// Colores de chispas
 function colorAleatorio() {
     const colores = [ "#FF0000", "#FF69B4", "#FFC0CB", "#DB7093", "#800080", "#FFD700", "#FFFFFF" ];
     return colores[Math.floor(Math.random() * colores.length)];
@@ -109,7 +121,13 @@ function lanzarCohete() {
 
 // Crear explosión (imagen o texto, no ambos)
 function crearExplosion(x, y, frase) {
-    let mostrarImagen = Math.random() < 0.5; // 50% probabilidad de imagen
+    // 🔊 Reproducir sonido solo si ya está habilitado
+    if (audioHabilitado) {
+        let s = sonidoExplosion.cloneNode();
+        setTimeout(() => s.play(), 100); // pequeño retraso para sincronizar con la animación
+    }
+
+    let mostrarImagen = Math.random() < 0.5;
     let contorno = generarCorazon(x, y, 10);
     explosiones.push({
         particulas: contorno.map(p => ({
@@ -245,7 +263,6 @@ function dibujarExplosiones() {
             ctx.fill();
         });
 
-        // Mostrar solo texto si no es de imagen
         if (explosion.mostrarTexto && !explosion.mostrarImagen) {
             ctx.globalAlpha = explosion.textoAlpha * fade;
             ctx.font = "bold 26px Arial";
@@ -255,7 +272,6 @@ function dibujarExplosiones() {
             ctx.fillText(explosion.texto, explosion.x, explosion.y - 5);
         }
 
-        // Mostrar imagen si está activada
         if (explosion.mostrarImagen) {
             let tamañoImg = 120;
             ctx.globalAlpha = explosion.textoAlpha * fade;
@@ -280,6 +296,4 @@ animar();
 </script>
 </body>
 </html>
-
-
 
